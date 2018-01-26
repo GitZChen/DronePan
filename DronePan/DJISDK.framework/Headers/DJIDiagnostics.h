@@ -5,7 +5,7 @@
 //  Copyright © 2016, DJI. All rights reserved.
 //
 
-#import <DJISDK/DJISDK.h>
+#import <Foundation/Foundation.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -95,7 +95,10 @@ typedef NS_ENUM (NSInteger, DJIDiagnosticsError){
      *  Battery needs a complete process of charging and discharging
      */
     DJIDiagnosticsErrorBatteryNeedStudy = 3005,
-
+    /**
+     *  Battery is not DJI battery.
+     */
+    DJIDiagnosticsErrorBatteryIllegal = 3006,
     /**
      *  RC FPGA error
      */
@@ -228,7 +231,17 @@ typedef NS_ENUM (NSInteger, DJIDiagnosticsError){
      *  Compass abnormal
      */
     DJIDiagnosticsErrorFlightControllerCompassAbnormal = 8015,
-
+    /**
+     *  Aircraft is warming up
+     */
+    DJIDiagnosticsErrorFlightControllerWarmingUp = 8016,
+    
+    /**
+     *  Using the wrong propellers. Inspire 2 has propellers for high altitudes and 
+     *  low altitudes. This error will be present when the wrong propellers are 
+     *  being used at the wrong altitude.
+     */
+    DJIDiagnosticsErrorFlightControllerUsingWrongPropellers = 8017,
     /**
      *  Propeller Guard Mounted
      */

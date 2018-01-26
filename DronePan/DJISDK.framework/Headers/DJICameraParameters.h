@@ -1,5 +1,5 @@
 //
-//  DJICameraParameter.h
+//  DJICameraParameters.h
 //  DJISDK
 //
 //  Copyright © 2015 DJI. All rights reserved.
@@ -12,7 +12,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 #pragma mark - Range Key of the change dictionary.
 /**
- *  CameraVideoResolutionAndFrameRateRange key
+ *  CameraVideoResolutionAndFrameRateRange key.
  */
 extern NSString *const DJISupportedCameraVideoResolutionAndFrameRateRange;
 
@@ -42,9 +42,16 @@ extern NSString *const DJISupportedCameraShutterSpeedRange;
 extern NSString *const DJISupportedCameraExposureCompensationRange;
 
 /**
- *  CameraApertureRange key
+ *  DJISupportedCameraApertureRange key
  */
 extern NSString *const DJISupportedCameraApertureRange;
+
+/**
+ *  Key to query the supported RAW video resolution. 
+ *  It is supported by X5S camera.
+ */
+extern NSString *const DJISupportedCameraSSDVideoResolutionRange;
+
 
 @class DJICameraParameters;
 
@@ -135,6 +142,16 @@ extern NSString *const DJISupportedCameraApertureRange;
  *  @return Array of NSNumber. Each element represent one current supported aperture value.
  */
 - (nonnull NSArray<NSNumber *> *)supportedCameraApertureRange;
+
+/**
+ *  Returns the current valid range for camera's RAW video resolution. Returns
+ *  `nil` if current camera does not support any RAW video resolution or the
+ *  camera is disconnected.
+ *
+ *  @return Array of NSNumber. Each element represent one current supported
+ *  resolution value.
+ */
+- (nonnull NSArray<NSNumber *> *)supportedCameraSSDVideoResolutionRange;
 
 @end
 

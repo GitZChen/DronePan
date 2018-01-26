@@ -52,6 +52,8 @@ protocol ConnectionControllerDelegate {
     func disconnectedFromRemote()
 
     func disconnectedFromFlightController()
+    
+    func firmwareVersion(version: String)
 }
 
 protocol ConnectionControllerDiagnosticsDelegate {
@@ -68,6 +70,7 @@ protocol ConnectionControllerDiagnosticsDelegate {
     var diagnosticsDelegate: ConnectionControllerDiagnosticsDelegate?
 
     var model: String?
+    var firmwareVersion: String?
 
     func start() {
         DJISDKManager.registerApp(appKey, withDelegate: self)
@@ -113,6 +116,19 @@ protocol ConnectionControllerDiagnosticsDelegate {
                     }
                 }
             }
+            
+            // Grab the product firmware version to display in settings
+            product.getFirmwarePackageVersionWithCompletion{ (version:String?, error:NSError?) -> Void in
+                
+                if let firmware = version {
+                    DDLogInfo("Firmware \(firmware)")
+                    self.trackEvent(category: "Connection", action: "Firmware Version", label: firmware)
+                }
+                
+                self.delegate?.firmwareVersion(version ?? "Unknown")
+                
+            }
+            
         } else {
             DDLogInfo("Disconnected")
             self.delegate?.disconnected()
@@ -131,7 +147,7 @@ protocol ConnectionControllerDiagnosticsDelegate {
 
     func componentWithKey(key: String, changedFrom oldComponent: DJIBaseComponent?, to newComponent: DJIBaseComponent?) {
         switch key {
-        case DJIBatteryComponentKey:
+        case DJIBatteryComponent:
             if let battery = newComponent as? DJIBattery {
                 DDLogDebug("New battery")
                 self.delegate?.connectedToBattery(battery)
@@ -139,7 +155,7 @@ protocol ConnectionControllerDiagnosticsDelegate {
                 DDLogDebug("No battery")
                 self.delegate?.disconnectedFromBattery()
             }
-        case DJICameraComponentKey:
+        case DJICameraComponent:
             if let camera = newComponent as? DJICamera {
                 DDLogDebug("New camera")
 
@@ -163,7 +179,7 @@ protocol ConnectionControllerDiagnosticsDelegate {
                 DDLogDebug("No camera")
                 self.delegate?.disconnectedFromCamera()
             }
-        case DJIGimbalComponentKey:
+        case DJIGimbalComponent:
             if let gimbal = newComponent as? DJIGimbal {
                 DDLogDebug("New gimbal")
                 self.delegate?.connectedToGimbal(gimbal)
@@ -171,7 +187,7 @@ protocol ConnectionControllerDiagnosticsDelegate {
                 DDLogDebug("No gimbal")
                 self.delegate?.disconnectedFromGimbal()
             }
-        case DJIRemoteControllerComponentKey:
+        case DJIRemoteControllerComponent:
             if let remote = newComponent as? DJIRemoteController {
                 DDLogDebug("New remote")
                 self.delegate?.connectedToRemote(remote)
@@ -179,7 +195,7 @@ protocol ConnectionControllerDiagnosticsDelegate {
                 DDLogDebug("No remote")
                 self.delegate?.disconnectedFromRemote()
             }
-        case DJIFlightControllerComponentKey:
+        case DJIFlightControllerComponent:
             if let fc = newComponent as? DJIFlightController {
                 DDLogDebug("New flight controller")
                 self.delegate?.connectedToFlightController(fc)

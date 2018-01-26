@@ -1,5 +1,25 @@
 # Change Log
 
+## [1.6b16](https://github.com/dbaldwin/DronePan/releases/tag/1.6b16)
+
+* Updated UI with icons and connection status light
+* View camera settings: mode, aperture, shutter, ISO, exposure compensation
+* Better debug logging with papertrail
+* Updated video previewer from SDK 3.3
+* Video preview now full screen
+
+## 1.5
+
+#### App Issues
+
+* Video feed doesn't fill the view in all cases [Issue 33](https://github.com/dbaldwin/DronePan/issues/33)
+* Gimbal yaw for I1 coming soon [Issue 24](https://github.com/dbaldwin/DronePan/issues/24)
+
+### [1.5b14](https://github.com/dbaldwin/DronePan/releases/tag/1.5b14)
+
+* Added DJI SDK 3.3 which comes with support for Osmo Mobile
+* Enabled pitch range extension for Phantom users. This should force the +30 sky row if it's selected in DronePan (it is by default) and not enabled in GO.
+
 ## 1.4.3
 
 ### Known issues
@@ -10,14 +30,19 @@ SDK 3.2 does not tell us when a photo or video is taken the first time after the
 have said that this will be fixed in a later version of the SDK. Please make sure that after formatting you
 have taken at least one photo or video before running DronePan.
 
-#### App Issues
+### [1.4.3b13](https://github.com/dbaldwin/DronePan/releases/tag/1.4.3b13)
 
-* Video feed doesn't fill the view in all cases [Issue 33](https://github.com/dbaldwin/DronePan/issues/33)
-* Gimbal yaw for I1 coming soon [Issue 24](https://github.com/dbaldwin/DronePan/issues/24)
+* Added sdk version and firmware version to settings screen for debug purposes.
+* Notify P4 users if they try to shoot a pano when not in P mode
+* AEB photo option in settings
+
+### [1.4.3b12](https://github.com/dbaldwin/DronePan/releases/tag/1.4.3b12)
+
+Added sdk version and firmware version to settings screen for debug purposes.
 
 ### [1.4.3b11](https://github.com/dbaldwin/DronePan/releases/tag/1.4.3b11)
 
-...
+An incremental build to extend the TestFlight beta.
 
 ### [1.4.3b10](https://github.com/dbaldwin/DronePan/releases/tag/1.4.3b10)
 

@@ -32,6 +32,10 @@ protocol CameraControllerDelegate {
     func cameraControllerReset()
 
     func cameraControllerNewMedia(filename: String)
+    
+    func cameraExposureValuesUpdated(iso iso: UInt, aperture: DJICameraAperture, shutter: DJICameraShutterSpeed, compensation: DJICameraExposureCompensation)
+    
+    func cameraExposureModeUpdated(mode: DJICameraExposureMode)
 }
 
 protocol VideoControllerDelegate {
@@ -40,6 +44,7 @@ protocol VideoControllerDelegate {
 
 class CameraController: NSObject, DJICameraDelegate {
     let camera: DJICamera
+    var model: String?
 
     var delegate: CameraControllerDelegate?
     var videoDelegate: VideoControllerDelegate?
@@ -77,14 +82,14 @@ class CameraController: NSObject, DJICameraDelegate {
         }
     }
 
-    func takeASnap() {
+    func takeASnap(photoDelayTime: Double) {
         DDLogInfo("Camera Controller takeASnap")
 
         self.status = .Normal
 
         self.tookShot = false
         dispatch_async(self.cameraWorkQueue) {
-            self.takeASnap(0)
+            self.takeASnap(0, photoDelayTime: photoDelayTime)
         }
     }
 
@@ -127,6 +132,40 @@ class CameraController: NSObject, DJICameraDelegate {
                 self.setPhotoMode(nextCount)
             }
         }
+        
+        
+        // Check if we can set the focus mode for Mavic
+        if(self.camera.isAdjustableFocalPointSupported()) {
+            
+            self.camera.setLensFocusMode(DJICameraLensFocusMode.Auto) {
+                (error) in
+            
+                if let e = error {
+                 
+                    DDLogWarn("Camera Controller setLensFocusMode - error seen - \(e)")
+                
+                } else {
+                    
+                    DDLogDebug("Camera Controller setLensFocusMode successful")
+                    
+                    // Since it was successful let's try to set the focus to center
+                    self.camera.setLensFocusTarget(CGPointMake(0.5, 0.5)) {
+                        (error) in
+                        
+                        if let e = error {
+                            
+                            DDLogWarn("Camera Controller setLensFocusTarget - error seen - \(e)")
+                            
+                        } else {
+                            
+                            DDLogDebug("Camera Controller setLensFocusTarget successful")
+                            
+                        }
+                    }
+                }
+            }
+            
+        }
 
         if errorSeen {
             return
@@ -153,7 +192,7 @@ class CameraController: NSObject, DJICameraDelegate {
         }
     }
 
-    private func takeASnap(counter: Int) {
+    private func takeASnap(counter: Int, photoDelayTime: Double) {
         if (status != .Normal) {
             DDLogDebug("Camera Controller takeASnap - status was \(status) - returning")
 
@@ -175,25 +214,45 @@ class CameraController: NSObject, DJICameraDelegate {
 
         var errorSeen = false
 
-        self.camera.startShootPhoto(.Single) {
+        // Set the photo mode from the DJI enum
+        var djiPhotoMode: DJICameraShootPhotoMode = .Single
+
+        if let model = self.model {
+            // Get the photo mode stored in settings
+            let photoMode = ModelSettings.photoMode(model)
+        
+            if (photoMode == 1) {
+                djiPhotoMode = .AEB
+            }
+            
+            // photoMode == 2 -> djiPhotoMode = .HDR but this takes too long to process and we timeout
+        }
+        
+        if(counter == 0){
+            // Only sleep on first attempt at taking photo
+            DDLogDebug("Sleep for \(photoDelayTime) second(s) before taking photo")
+            NSThread.sleepForTimeInterval(photoDelayTime)
+        }
+        
+        self.camera.startShootPhoto(djiPhotoMode) {
             (error) in
-            if let e = error {
+                if let e = error {
                 DDLogWarn("Camera Controller takeASnap - error seen - \(e)")
-
+                
                 errorSeen = true
-
-                self.takeASnap(nextCount)
+                self.takeASnap(nextCount, photoDelayTime: photoDelayTime)
             }
         }
+        
 
         if errorSeen {
             return
         }
 
-        self.checkTakeASnap(0, counter: counter)
+        self.checkTakeASnap(0, counter: counter, photoDelayTime: photoDelayTime)
     }
 
-    private func checkTakeASnap(checkCounter: Int, counter: Int) {
+    private func checkTakeASnap(checkCounter: Int, counter: Int, photoDelayTime: Double) {
         if (status != .Normal) {
             DDLogDebug("Camera Controller checkTakeASnap - status was \(status) - returning")
 
@@ -220,11 +279,11 @@ class CameraController: NSObject, DJICameraDelegate {
                 } else if (self.isShooting || self.isStoring) {
                     DDLogDebug("Camera Controller checkTakeASnap - busy - retry")
 
-                    self.checkTakeASnap(checkCounter + 1, counter: counter)
+                    self.checkTakeASnap(checkCounter + 1, counter: counter, photoDelayTime: photoDelayTime)
                 } else {
                     DDLogWarn("Camera Controller checkTakeASnap hasn't completed yet count: \(counter)")
 
-                    self.takeASnap(counter + 1)
+                    self.takeASnap(counter + 1, photoDelayTime: photoDelayTime)
                 }
             } else {
                 DDLogDebug("Status changed to \(self.status) while waiting for photo")
@@ -336,5 +395,20 @@ class CameraController: NSObject, DJICameraDelegate {
 
             self.status = newState
         }
+    }
+    
+    func camera(camera: DJICamera, didUpdateCurrentExposureParameters params: DJICameraExposureParameters) {
+        DDLogVerbose("Camera Controller didUpdateCurrentExposureValues")
+        
+        camera.getExposureModeWithCompletion(){
+            (mode, error) in
+            if let error = error {
+                DDLogWarn("Camera Controller couldn't get exposure mode: \(error)")
+            } else {
+                self.delegate?.cameraExposureModeUpdated(mode)
+            }
+        }
+        
+        self.delegate?.cameraExposureValuesUpdated(iso: params.iso, aperture: params.aperture, shutter: params.shutterSpeed, compensation: params.exposureCompensation)
     }
 }

@@ -22,6 +22,8 @@ enum SettingsKeys: String {
     case NadirCount = "nadir_count"
     case MaxPitch = "max_pitch"
     case MaxPitchEnabled = "max_pitch_enabled"
+    case PhotoMode = "photo_mode"
+    case PhotoDelay = "photo_delay"
 }
 
 class ModelSettings {
@@ -36,13 +38,17 @@ class ModelSettings {
     private class func boolSettingForKey(model: String, key: SettingsKeys, defaultValue: Bool) -> Bool {
         return ModelSettings.settingForKey(model, key: key) as? Bool ?? defaultValue
     }
-
+    
+    private class func doubleSettingForKey(model: String, key: SettingsKeys, defaultValue: Double) -> Double {
+        return ModelSettings.settingForKey(model, key: key) as? Double ?? defaultValue
+    }
+  
     class func startDelay(model: String) -> Int {
         return ModelSettings.intSettingForKey(model, key: .StartDelay, defaultValue: 5)
     }
 
     class func photosPerRow(model: String) -> Int {
-        return ModelSettings.intSettingForKey(model, key: .PhotosPerRow, defaultValue: 6)
+        return ModelSettings.intSettingForKey(model, key: .PhotosPerRow, defaultValue: ModelConfig.photosPerRow(model))
     }
 
     class func numberOfRows(model: String) -> Int {
@@ -59,6 +65,14 @@ class ModelSettings {
 
     class func maxPitchEnabled(model: String) -> Bool {
         return ModelSettings.boolSettingForKey(model, key: .MaxPitchEnabled, defaultValue: true)
+    }
+    
+    class func photoMode(model: String) -> Int {
+        return ModelSettings.intSettingForKey(model, key: .PhotoMode, defaultValue: 0)
+    }
+    
+    class func photoDelay(model: String) -> Int {
+        return ModelSettings.intSettingForKey(model, key: .PhotoDelay, defaultValue: 0)
     }
     
     class func updateSettings(model: String, settings newSettings: [SettingsKeys:AnyObject]) {

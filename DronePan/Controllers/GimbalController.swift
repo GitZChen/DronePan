@@ -63,18 +63,22 @@ class GimbalController: NSObject, DJIGimbalDelegate, Analytics {
 
     let gimbalWorkQueue = dispatch_queue_create("com.dronepan.queue.gimbal", DISPATCH_QUEUE_CONCURRENT)
 
-    init(gimbal: DJIGimbal, gimbalYawIsRelativeToAircraft: Bool = false) {
+    init(gimbal: DJIGimbal, gimbalYawIsRelativeToAircraft: Bool = false, allowsAboveHorizon: Bool = true) {
         DDLogInfo("Gimbal Controller init")
 
         self.gimbal = gimbal
 
         self.relativeGimbalYaw = gimbalYawIsRelativeToAircraft
 
-        if let pitchInfo = gimbal.gimbalCapability[DJIGimbalKeyAdjustPitch] as? DJIParamCapabilityMinMax {
+        if let pitchInfo = gimbal.gimbalCapability[DJIGimbalParamAdjustPitch] as? DJIParamCapabilityMinMax {
             isPitchAdjustable = pitchInfo.isSupported
 
             if (isPitchAdjustable) {
-                pitchRange = pitchInfo.min.integerValue ... pitchInfo.max.integerValue
+                if (allowsAboveHorizon) {
+                    pitchRange = pitchInfo.min.integerValue ... pitchInfo.max.integerValue
+                } else {
+                    pitchRange = pitchInfo.min.integerValue ... 0
+                }
             } else {
                 pitchRange = nil
             }
@@ -83,7 +87,7 @@ class GimbalController: NSObject, DJIGimbalDelegate, Analytics {
             pitchRange = nil
         }
 
-        if let yawInfo = gimbal.gimbalCapability[DJIGimbalKeyAdjustYaw] as? DJIParamCapabilityMinMax {
+        if let yawInfo = gimbal.gimbalCapability[DJIGimbalParamAdjustYaw] as? DJIParamCapabilityMinMax {
             isYawAdjustable = yawInfo.isSupported
 
             if (isYawAdjustable) {
@@ -96,7 +100,7 @@ class GimbalController: NSObject, DJIGimbalDelegate, Analytics {
             yawRange = nil
         }
 
-        if let rollInfo = gimbal.gimbalCapability[DJIGimbalKeyAdjustRoll] as? DJIParamCapabilityMinMax {
+        if let rollInfo = gimbal.gimbalCapability[DJIGimbalParamAdjustRoll] as? DJIParamCapabilityMinMax {
             isRollAdjustable = rollInfo.isSupported
 
             if (isRollAdjustable) {
@@ -109,16 +113,25 @@ class GimbalController: NSObject, DJIGimbalDelegate, Analytics {
             rollRange = nil
         }
 
-        if let rangeExtension = gimbal.gimbalCapability[DJIGimbalKeyPitchRangeExtension] as? DJIParamCapability {
-            DDLogDebug("Range extension supported: \(rangeExtension.isSupported)")
-
-            self.supportsRangeExtension = rangeExtension.isSupported
-            // TOOD - we should now be able to check and set sky row. Testing on all devices needed.
-            /*
-            if rangeExtension.isSupported {
-                gimbal!.setPitchRangeExtensionEnabled(true, withCompletion: nil)
+        if (allowsAboveHorizon) {
+            if let rangeExtension = gimbal.gimbalCapability[DJIGimbalParamPitchRangeExtensionEnabled] as? DJIParamCapability {
+                DDLogDebug("Range extension supported: \(rangeExtension.isSupported)")
+                
+                self.supportsRangeExtension = rangeExtension.isSupported
+                
+                if self.supportsRangeExtension {
+                    gimbal.setPitchRangeExtensionEnabled(true, withCompletion: {
+                        (error) in
+                        if let error = error {
+                            
+                            DDLogWarn("Error setting pitch range extension \(error)")
+                            
+                        }
+                    })
+                }
             }
-            */
+        } else {
+            self.supportsRangeExtension = false
         }
 
         super.init()

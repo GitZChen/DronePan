@@ -7,57 +7,11 @@
 
 #import <Foundation/Foundation.h>
 #import <DJISDK/DJIBaseComponent.h>
+#import <DJISDK/DJIHandheldControllerBaseTypes.h>
 
 @class DJIWiFiLink;
 
 NS_ASSUME_NONNULL_BEGIN
-
-/*********************************************************************************/
-#pragma mark DJIHandheldWiFiFrequency Type
-/*********************************************************************************/
-
-/**
- *  Handheld WiFi Frequency Type.
- */
-typedef NS_ENUM (uint8_t, DJIHandheldWiFiFrequencyType){
-    /**
-     *  The Handheld WiFi frequency is 2.4G
-     */
-    DJIHandheldWiFiFrequency2Dot4G,
-    /**
-     *  The Handheld WiFi frequency is 5.8G
-     */
-    DJIHandheldWiFiFrequency5Dot8G,
-    
-};
-
-/**
- *  Handheld Power Mode
- */
-typedef NS_ENUM (uint8_t, DJIHandheldPowerMode){
-    /**
-     *  The Handheld Power Mode is awake.
-     *  For Osmo, when it is in this mode, all the components in `DJIHandheld` are accessible.
-     */
-    DJIHandheldPowerModeAwake,
-    /**
-     *  The Handheld Power Mode is sleeping. The handheld controller keeps the WiFi connection
-     *  to the Mobile device alive but most other components are off. The power consumption is low
-     *  in this mode.
-     *  For Osmo, when it is in this mode, only the `DJIHandheldController`, `DJIAirLink`, and `DJIBattery`
-     *  are accessible.
-     */
-    DJIHandheldPowerModeSleeping,
-    /**
-     *  The Handheld Power Mode is powered off. Once this mode is set the delegate will receive this mode until the handheld device is
-     *  shut down completely.
-     */
-    DJIHandheldPowerModePowerOff,
-    /**
-     *  The Handheld Power Mode in unknown.
-     */
-    DJIHandheldPowerModeUnknown = 0xFF
-};
 
 @class DJIHandheldController;
 
@@ -83,7 +37,19 @@ typedef NS_ENUM (uint8_t, DJIHandheldPowerMode){
  */
 - (void)handheldController:(DJIHandheldController *_Nonnull)controller didUpdatePowerMode:(DJIHandheldPowerMode)powerMode;
 
+/**
+ *  Delegate for the handheld controller's current hardware state (e.g. the
+ *  state of the physical buttons and joysticks).
+ *  Supported only by Osmo Mobile. 
+ *
+ *  @param controller   The handheld controller that updates the hardware state.
+ *  @param powerMode    The handheld controller's current hardware state.
+ *
+ */
+- (void)handheldController:(DJIHandheldController *_Nonnull)controller didUpdateHardwareState:(DJIHandheldControllerHardwareState *)state;
+
 @end
+
 
 /*********************************************************************************/
 #pragma mark - DJIHandheldController
@@ -110,5 +76,36 @@ typedef NS_ENUM (uint8_t, DJIHandheldPowerMode){
  */
 - (void)setHandheldPowerMode:(DJIHandheldPowerMode)mode withCompletion:(DJICompletionBlock)block;
 
+/**
+ *  Controls the LED of the handheld controller.
+ *
+ *  @param command  The command to control the LED.
+ *  @param block    Remote execution result callback block.
+ */
+- (void)controlLEDWithCommand:(DJIHandheldControllerLEDCommand *)command
+               withCompletion:(DJICompletionBlock)block;
+
+/**
+ *  Enables/disables joystick control of the gimbal.
+ *  By default, it is enabled. The handheld will be reset to the default value 
+ *  when it reboots or SDK reinitializes. When gimbal control is disabled, the
+ *  joystick can be used for other purposes in an SDK application by reading its
+ *  position values with `joystickVerticalDirection` and `joystickHorizontalDirection`.
+ *  It is only supported in firmware version 1.2.0.40 or above.
+ *
+ *  @param enabled  `YES` to enable the gimbal control.
+ *  @param block    Remote execution result callback block.
+ */
+- (void)setStickGimbalControlEnabled:(BOOL)enabled withCompletion:(DJICompletionBlock)block;
+
+/**
+ *  Gets if the gimbal control with the joystick is enabled or not.
+ *  It is only supported in firmware version 1.2.0.40 or above.
+ *
+ *  @param block    Remote execution result callback block.
+ */
+- (void)getStickGimbalControlEnabledWithCompletion:(void(^)(BOOL enabled, NSError *_Nullable error))block;
+
 @end
+
 NS_ASSUME_NONNULL_END

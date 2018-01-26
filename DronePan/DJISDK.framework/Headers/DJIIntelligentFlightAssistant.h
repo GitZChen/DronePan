@@ -10,106 +10,13 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class DJIIntelligentFlightAssistant;
-
-/**
- *  Distance warning returned by each sector of the front vision system. Warning Level 4 is the most serious level.
- */
-typedef NS_ENUM (NSInteger, DJIVisionSectorWarning){
-    /**
-     *  The warning level is invalid. The sector cannot determine depth of the scene in front of it.
-     */
-    DJIVisionSectorWarningInvalid,
-    /**
-     *  The distance between the obstacle detected by the sector and the aircraft is over 4 meters.
-     */
-    DJIVisionSectorWarningLevel1,
-    /**
-     *  The distance between the obstacle detected by the sector and the aircraft is between 3 - 4 meters.
-     */
-    DJIVisionSectorWarningLevel2,
-    /**
-     *  The distance between the obstacle detected by the sector and the aircraft is between 2 - 3 meters.
-     */
-    DJIVisionSectorWarningLevel3,
-    /**
-     *  The distance between the obstacle detected by the sector and the aircraft is less than 2 meters.
-     */
-    DJIVisionSectorWarningLevel4,
-    /**
-     *  The distance warning is unknown. This warning is returned when an exception occurs.
-     */
-    DJIVisionSectorWarningUnknown = 0xFF
-};
-
-/**
- *  Distance warning returned by the front vision system. Warning Level 4 is the most serious level.
- */
-typedef NS_ENUM (NSInteger, DJIVisionSystemWarning){
-    /**
-     *  The warning is invalid. The front vision system cannot determine depth of the scene in front of it.
-     */
-    DJIVisionSystemWarningInvalid,
-    /**
-     *  The distance between the obstacle detected by the vision system and the aircraft is safe (over 2 meters).
-     */
-    DJIVisionSystemWarningSafe,
-    /**
-     *  The distance between the obstacle detected by the vision system and the aircraft is dangerous (less than 2 meters).
-     */
-    DJIVisionSystemWarningDangerous,
-    /**
-     *  The distance warning is unknown. This warning is returned when an exception occurs.
-     */
-    DJIVisionSystemWarningUnknown = 0xFF
-};
-
-/**
- *  The vision system can see in front of the aircraft with a 70 degree horizontal field of view (FOV) and 55 degree veritcal FOV. The horizontal FOV is split into four equal sectors, and this class gives the distance and warning level for one sector.
- */
-@interface DJIVisionDetectionSector : NSObject
-
-/**
- *  The detected obstacle distance to the aircraft in meters.
- */
-@property(nonatomic, readonly) double obstacleDistanceInMeters;
-
-/**
- *  The warning level based on distance.
- */
-@property(nonatomic, readonly) DJIVisionSectorWarning warningLevel;
-
-@end
-
-/**
- * This class gives state information about the vision system and aircraft, including information from each sector the vision system covers.
- */
-@interface DJIVisionDetectionState : NSObject
-
-/**
- *  `YES` if the vision sensor is working.
- */
-@property(nonatomic, readonly) BOOL isSensorWorking;
-
-/**
- *  `YES` if the aircraft is braking automatically to avoid collision.
- */
-@property(nonatomic, readonly) BOOL isBraking;
-
-/**
- *  Warning level between the obstacle and the aircraft. This is a combination of warning levels from each sector.
- */
-@property(nonatomic, readonly) DJIVisionSystemWarning systemWarning;
-
-/**
- *  The vision system can see infront of the aircraft with a 70 degree horizontal field of view (FOV) and 55 degree veritcal FOV for the Phantom 4. The horizontal FOV is split into four equal sectors and this array contains the distance and warning information for each sector. For Phantom 4, the horizontal FOV is separated into 4 sectors.
- */
-@property(nonatomic, readonly) NSArray *_Nonnull detectionSectors;
-
-@end
+@class DJIVisionDetectionState;
+@class DJIVisionControlState; 
 
 /**
  *
- *  This protocol provides a delegate method to update the Intelligent Flight Assistant current state.
+ *  This protocol provides a delegate method to update the Intelligent Flight
+ *  Assistant current state.
  *
  */
 @protocol DJIIntelligentFlightAssistantDelegate <NSObject>
@@ -117,14 +24,29 @@ typedef NS_ENUM (NSInteger, DJIVisionSystemWarning){
 @optional
 
 /**
- *  Callback function that updates the vision detection state. The frequency of this method is 10Hz.
+ *  Callback function that updates the detection state of each vision sensor.
+ *
+ *  @param assistant    Intelligent flight assistant that has the updated state.
+ *  @param state        The state of vision sensor.
  */
-- (void)intelligentFlightAssistant:(DJIIntelligentFlightAssistant *_Nonnull)assistant didUpdateVisionDetectionState:(DJIVisionDetectionState *_Nonnull)state;
+- (void)intelligentFlightAssistant:(DJIIntelligentFlightAssistant *_Nonnull)assistant
+     didUpdateVisionDetectionState:(DJIVisionDetectionState *_Nonnull)state;
+
+/**
+ *  Callback function that updates the aircraft state controlled by the
+ *  intelligent flight assistant.
+ *
+ *  @param assistant    Intelligent flight assistant that has the updated state.
+ *  @param state        The control state.
+ */
+- (void)intelligentFlightAssistant:(DJIIntelligentFlightAssistant *_Nonnull)assistant
+       didUpdateVisionControlState:(DJIVisionControlState *_Nonnull)state;
 
 @end
 
 /**
- *  This class contains components of the Intelligent Flight Assistant and provides methods to change the settings of Intelligent Flight Assistant.
+ *  This class contains components of the Intelligent Flight Assistant and
+ *  provides methods to change the settings of Intelligent Flight Assistant.
  */
 @interface DJIIntelligentFlightAssistant : NSObject
 
@@ -134,9 +56,11 @@ typedef NS_ENUM (NSInteger, DJIVisionSystemWarning){
 @property(nonatomic, weak) id<DJIIntelligentFlightAssistantDelegate> delegate;
 
 /**
- *  Set collision avoidance enabled. When collision avoidance is enabled, the aircraft will stop and try to go around an obstacle when detected.
+ *  Set collision avoidance enabled. When collision avoidance is enabled, the
+ *  aircraft will stop and try to go around an obstacle when detected.
  */
-- (void)setCollisionAvoidanceEnabled:(BOOL)enable withCompletion:(DJICompletionBlock)completion;
+- (void)setCollisionAvoidanceEnabled:(BOOL)enable
+                      withCompletion:(DJICompletionBlock)completion;
 
 /**
  *  Get collision avoidance enabled.
@@ -144,14 +68,100 @@ typedef NS_ENUM (NSInteger, DJIVisionSystemWarning){
 - (void)getCollisionAvoidanceEnabledWithCompletion:(void (^_Nonnull)(BOOL enable, NSError *_Nullable error))completion;
 
 /**
- *  Set vision positioning enabled. Vision positioning is used to augment GPS to improve location accuracy when hovering and improve velocity calculation when flying.
+ *  Set vision positioning enabled. Vision positioning is used to augment GPS to
+ *  improve location accuracy when hovering and improve velocity calculation
+ *  when flying.
  */
-- (void)setVisionPositioningEnabled:(BOOL)enable withCompletion:(DJICompletionBlock)completion;
+- (void)setVisionPositioningEnabled:(BOOL)enable
+                     withCompletion:(DJICompletionBlock)completion;
 
 /**
  *  Get vision position enable.
  */
 - (void)getVisionPositioningEnabledWithCompletion:(void (^_Nonnull)(BOOL enable, NSError *_Nullable error))completion;
+
+/**
+ *  Enables/disables precision landing. When enabled, the aircraft will record
+ *  its take-off location visually (as well as with GPS). On a Return-To-Home
+ *  action the aircraft will attempt to perform a precision landing using the
+ *  additional visual information. This method only works on a Return-To-Home
+ *  action when the home location is successfully recorded during take-off, and
+ *  not changed during flight.
+ *  It is supported by Phantom 4 Pro and Mavic Pro.
+ *
+ *  @param enabled      `YES` to enable the precise landing.
+ *  @param completion   Completion block that receives the setter result.
+ */
+- (void)setPrecisionLandingEnabled:(BOOL)enabled withCompletion:(DJICompletionBlock)completion;
+
+/**
+ *  Gets if precision landing is enabled.
+ *  It is supported by Phantom 4 Pro and Mavic Pro.
+ *
+ *  @param completion   Completion block that receives the getter result.
+ */
+- (void)getPrecisionLandingEnabledWithCompletion:(void (^_Nonnull)(BOOL enabled, NSError *_Nullable error))completion;
+
+/**
+ *  Enables/disables landing protection. During auto-landing,
+ *  the downward facing vision sensor will check if the ground surface is flat
+ *  enough for a safe landing. If it is not and landing proteciton is `YES`,
+ *  then landing will abort and need to be manually performed
+ *  by the user.
+ *  It is supported by Mavic Pro, Phantom 4 Pro and Inspire 2.
+ *
+ *  @param enabled      `YES` to enable the landing protection.
+ *  @param completion   Completion block that receives the setter result.
+ */
+- (void)setLandingProtectionEnabled:(BOOL)enabled withCompletion:(DJICompletionBlock)completion;
+
+/**
+ *  Gets if landing protection is enabled.
+ *  It is supported by Mavic Pro, Phantom 4 Pro and Inspire 2.
+ *
+ *  @param completion   Completion block that receives the getter result.
+ */
+- (void)getLandingProtectionEnabledWithCompletion:(void (^_Nonnull)(BOOL enabled, NSError *_Nullable error))completion;
+
+/**
+ *  Enables/disables active obstacle avoidance. When enabled, and an obstacle is 
+ *  moving toward the aircraft, the aircraft will actively fly away from it. If
+ *  while actively avoiding a moving obstacle, the aircraft detects another obstacle
+ *  in its avoidance path, it will stop.
+ *  `CollisionAvoidance` must also be enabled.
+ *
+ *  @param enabled      `YES` to enable the active avoidance.
+ *  @param completion   Completion block that receives the setter result.
+ */
+- (void)setActiveObstacleAvoidanceEnabled:(BOOL)enabled withCompletion:(DJICompletionBlock)completion;
+
+/**
+ *  Gets if active obstacle avoidance is enabled.
+ *
+ *  @param completion   Completion block that receives the getter result.
+ */
+- (void)getActiveObstacleAvoidanceEnabledWithCompletion:(void (^_Nonnull)(BOOL enabled, NSError *_Nullable error))completion;
+
+/**
+ *  Enables/disables upwards avoidance. When the infrared sensor on top of the
+ *  Inspire 2 detects an obstacle, the aircraft will slow down the ascent speed
+ *  and maintain a minimum distance (1 meter) from the obstacle. The
+ *  sensor has a 10-degree horizontal field of view (FOV) and 10-degree vertical
+ *  FOV. The maximum detection distance is 5 meters.
+ *  It is supported by Inspire 2.
+ *
+ *  @param enabled      `YES` to enable the upwards avoidance.
+ *  @param completion   Completion block that receives the setter result.
+ */
+- (void)setUpwardsAvoidanceEnabled:(BOOL)enabled withCompletion:(DJICompletionBlock)completion;
+
+/**
+ *  Gets if upwards avoidance is enabled.
+ *  It is supported by Inspire 2.
+ *
+ *  @param completion   Completion block that receives the getter result.
+ */
+- (void)getUpwardsAvoidanceEnabledWithCompletion:(void (^_Nonnull)(BOOL enabled, NSError *_Nullable error))completion;
 
 @end
 

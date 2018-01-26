@@ -61,7 +61,7 @@ class SettingsViewControllerTests: XCTestCase {
         
         XCTAssertEqual(vc.tableView.numberOfSections, 1, "Incorrect number of sections")
 
-        XCTAssertEqual(vc.tableView.numberOfRowsInSection(0), 5, "Incorrect number of rows")
+        XCTAssertEqual(vc.tableView.numberOfRowsInSection(0), 6, "Incorrect number of rows")
         
         let perRowCell = vc.tableView.cellForRowAtIndexPath(NSIndexPath(forRow: 0, inSection: 0)) as! SliderTableViewCell
         
@@ -101,7 +101,7 @@ class SettingsViewControllerTests: XCTestCase {
         
         XCTAssertEqual(vc.tableView.numberOfSections, 1, "Incorrect number of sections")
         
-        XCTAssertEqual(vc.tableView.numberOfRowsInSection(0), 5, "Incorrect number of rows")
+        XCTAssertEqual(vc.tableView.numberOfRowsInSection(0), 6, "Incorrect number of rows")
         
         let perRowCell = vc.tableView.cellForRowAtIndexPath(NSIndexPath(forRow: 0, inSection: 0)) as! SliderTableViewCell
         
@@ -152,7 +152,7 @@ class SettingsViewControllerTests: XCTestCase {
         
         XCTAssertEqual(vc.tableView.numberOfSections, 1, "Incorrect number of sections")
         
-        XCTAssertEqual(vc.tableView.numberOfRowsInSection(0), 6, "Incorrect number of rows")
+        XCTAssertEqual(vc.tableView.numberOfRowsInSection(0), 7, "Incorrect number of rows")
         
         let perRowCell = vc.tableView.cellForRowAtIndexPath(NSIndexPath(forRow: 0, inSection: 0)) as! SliderTableViewCell
         
@@ -229,7 +229,7 @@ class SettingsViewControllerTests: XCTestCase {
         
         XCTAssertEqual(vc.tableView.numberOfSections, 1, "Incorrect number of sections")
         
-        XCTAssertEqual(vc.tableView.numberOfRowsInSection(0), 6, "Incorrect number of rows")
+        XCTAssertEqual(vc.tableView.numberOfRowsInSection(0), 7, "Incorrect number of rows")
 
         let delayCell = vc.tableView.cellForRowAtIndexPath(NSIndexPath(forRow: 0, inSection: 0)) as! SliderTableViewCell
         
@@ -367,7 +367,7 @@ class SettingsViewControllerTests: XCTestCase {
 
         let versionString = vc.versionLabel.text
 
-        XCTAssertTrue(versionString?.rangeOfString("\\d\\d?.\\d\\d?.\\d\\d?\\(\\d\\d?\\d?\\)", options: .RegularExpressionSearch) != nil, "Version string didn't match format \(versionString)")
+        XCTAssertTrue(versionString?.rangeOfString("\\d\\d?\\.\\d\\d?(\\.\\d\\d?)?\\(\\d\\d?\\)", options: .RegularExpressionSearch) != nil, "Version string didn't match format \(versionString)")
     }
 
     func testCopyLog() {

@@ -7,12 +7,13 @@
 
 # DronePan
 
-DronePan - 360 aerial panoramas with DJI Inspire 1 and Phantom 3 drones.
+DronePan - 360 aerial panoramas with DJI (Phantom (3 and later), Inspire, Matrice, Mavic, Osmo family)
+
+[![Download on the App Store](https://linkmaker.itunes.apple.com/images/badges/en-us/badge_appstore-lrg.svg)](https://itunes.apple.com/us/app/dronepan/id1026329337?mt=8)
 
 As of 6th March 2016 DronePan is open source.
 
-* For bugs, feature requests etc - please use the project issues page. 
-
+* For bugs, feature requests etc - please use the project issues page.
 
 ## Want to help out?
 
@@ -47,9 +48,22 @@ Join our Facebook group here: http://www.facebook.com/groups/dronepan
 
 ## Development
 
-Apart from XCode we're using [Carthage](https://github.com/Carthage/Carthage) to handle dependencies.
+Tools in use:
 
-After cloning - you'll need to run
+* XCode (surprise)
+* [Carthage](https://github.com/Carthage/Carthage) to handle dependencies
+* git-lfs because the DJI SDK is too large for the repo on github
+
+To clone - make sure you have git-lfs installed _before_ you clone.
+
+This is easiest with homebrew:
+
+    brew install git git-lfs
+
+Your clone command will look like this:
+
+    git lfs clone https://github.com/dbaldwin/DronePan
+
+After cloning - you'll need to run:
 
     carthage bootstrap --platform ios
-

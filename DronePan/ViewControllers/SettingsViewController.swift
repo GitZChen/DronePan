@@ -24,15 +24,21 @@ enum SettingsViewKey {
     case NadirCount
     case MaxPitchEnabled
     case MetricSelected
+    case PhotoMode
+    case PhotoDelay
 }
 
 class SettingsViewController: UIViewController, Analytics {
 
     var model: String = ""
+    var sdkVersion: String = ""
+    var firmwareVersion: String = ""
     var type: ProductType = .Aircraft
 
     @IBOutlet weak var titleLabel: UILabel!
     @IBOutlet weak var versionLabel: UILabel!
+    @IBOutlet weak var firmwareVersionLabel: UILabel!
+    @IBOutlet weak var sdkVersionLabel: UILabel!
     @IBOutlet weak var yawAngleLabel: UILabel!
     @IBOutlet weak var pitchAngleLabel: UILabel!
     @IBOutlet weak var countLabel: UILabel!
@@ -48,6 +54,8 @@ class SettingsViewController: UIViewController, Analytics {
     var maxPitchEnabled = true
     var maxPitch = 0
     var metricSelected = true
+    var photoMode = 0
+    var photoDelay = 0
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -56,7 +64,7 @@ class SettingsViewController: UIViewController, Analytics {
         
         if let version = ControllerUtils.buildVersion() {
             self.versionLabel.hidden = false
-            self.versionLabel.text = "Version \(version)"
+            self.versionLabel.text = "DronePan: \(version)"
 
             DDLogDebug("Settings VC showing version \(version)")
         } else {
@@ -64,6 +72,11 @@ class SettingsViewController: UIViewController, Analytics {
 
             DDLogWarn("Settings VC unknown version")
         }
+        
+        // Display the SDK and product firmware versions for easy debug purposes
+        self.sdkVersionLabel.text = "SDK: " + sdkVersion
+        self.firmwareVersionLabel.text = "Firmware: " + firmwareVersion
+        
     }
 
     override func viewWillAppear(animated: Bool) {
@@ -146,6 +159,8 @@ class SettingsViewController: UIViewController, Analytics {
         self.maxPitchEnabled = ModelSettings.maxPitchEnabled(model)
         self.maxPitch = ModelSettings.maxPitch(model)
         self.metricSelected = ControllerUtils.metricUnits()
+        self.photoMode = ModelSettings.photoMode(model)
+        self.photoDelay = ModelSettings.photoDelay(model)
 
         updateCounts()
     }
@@ -194,16 +209,42 @@ extension SettingsViewController : UITableViewDataSource {
     func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch (self.type) {
         case .Handheld:
-            return 6
+            return 8
         case .Aircraft:
             if maxPitch > 0 {
-                return 6
+                return 8
             } else {
-                return 5
+                return 7
             }
         default:
             return 0
         }
+    }
+    
+    func photoModeCell(tableView: UITableView, indexPath: NSIndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCellWithIdentifier("SegmentViewCell", forIndexPath: indexPath) as! SegmentTableViewCell
+        
+        cell.delegate = self
+        
+        cell.title = "Photo Mode:"
+        cell.values = ["Single", "AEB"]
+        cell.helpText = "Single mode takes one photo per shot. AEB mode takes three photos per shot at different exposures and is not supported by the XT camera."
+        // During testing HDR did not work so I'm saving this help text for future reference
+        // HDR mode automatically blends three exposures into a single image and is not supported by the X5, X5R, and XT cameras
+        cell.key = .PhotoMode
+        
+        var mode = "Single"
+        
+        if (self.photoMode == 1) {
+            mode = "AEB"
+        /*} else if (self.photoMode == 2) {
+            mode = "HDR"*/
+        }
+        
+        cell.prepareForDisplay(mode)
+        
+        return cell
+        
     }
     
     func unitsCell(tableView: UITableView, indexPath: NSIndexPath) -> UITableViewCell {
@@ -272,6 +313,24 @@ extension SettingsViewController : UITableViewDataSource {
         return cell
     }
     
+    func photoDelayCell(tableView: UITableView, indexPath: NSIndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCellWithIdentifier("SliderViewCell", forIndexPath: indexPath) as! SliderTableViewCell
+        
+        cell.delegate = self
+        
+        cell.title = "Delay before each shot:"
+        cell.min = 0
+        cell.max = 50
+        cell.step = 5
+        cell.divider = 10
+        cell.helpText = "How long should device wait after movement, before taking a shot. Use this delay to prevent image blurring issues when shooting in dark or using auto-exposure mode"
+        cell.key = .PhotoDelay
+        
+        cell.prepareForDisplay(self.photoDelay)
+        
+        return cell
+    }
+    
     func nadirCountCell(tableView: UITableView, indexPath: NSIndexPath, nadir: Bool = true) -> UITableViewCell {
         let cell = tableView.dequeueReusableCellWithIdentifier("SliderViewCell", forIndexPath: indexPath) as! SliderTableViewCell
 
@@ -336,7 +395,11 @@ extension SettingsViewController : UITableViewDataSource {
             case 3:
                 cell = nadirCountCell(tableView, indexPath: indexPath, nadir: false)
             case 4:
+                cell = photoDelayCell(tableView, indexPath: indexPath)
+            case 5:
                 cell = unitsCell(tableView, indexPath: indexPath)
+            case 6:
+                cell = photoModeCell(tableView, indexPath: indexPath)
             default:
                 cell = buttonCell(tableView, indexPath: indexPath)
             }
@@ -360,7 +423,11 @@ extension SettingsViewController : UITableViewDataSource {
             case 3:
                 cell = pitchMaxCell(tableView, indexPath: indexPath)
             case 4:
+                cell = photoDelayCell(tableView, indexPath: indexPath)
+            case 5:
                 cell = unitsCell(tableView, indexPath: indexPath)
+            case 6:
+                cell = photoModeCell(tableView, indexPath: indexPath)
             default:
                 cell = buttonCell(tableView, indexPath: indexPath)
             }
@@ -382,6 +449,14 @@ extension SettingsViewController : SegmentTableViewCellDelegate {
             self.maxPitchEnabled = value != "Horizon"
         case .MetricSelected:
             self.metricSelected = value == "Metric"
+        case .PhotoMode:
+            if value == "Single" {
+                self.photoMode = 0
+            } else if value == "AEB" {
+                self.photoMode = 1
+            } else if value == "HDR" {
+                self.photoMode = 2
+            }
         default:
             DDLogWarn("Segment control tríed to update a non-segment setting \(key)")
         }
@@ -401,6 +476,8 @@ extension SettingsViewController : SliderTableViewCellDelegate {
             self.rowCount = value
         case .NadirCount:
             self.nadirCount = value
+        case .PhotoDelay:
+            self.photoDelay = value
         default:
             DDLogWarn("Slider control tríed to update a non-slider setting \(key)")
         }
@@ -419,7 +496,9 @@ extension SettingsViewController : ButtonViewCellDelegate {
                 .PhotosPerRow: self.perRow,
                 .NumberOfRows: self.rowCount,
                 .NadirCount: self.nadirCount,
-                .MaxPitchEnabled: self.maxPitchEnabled
+                .MaxPitchEnabled: self.maxPitchEnabled,
+                .PhotoMode: self.photoMode,
+                .PhotoDelay: self.photoDelay
             ]
 
             ModelSettings.updateSettings(model, settings: settings)

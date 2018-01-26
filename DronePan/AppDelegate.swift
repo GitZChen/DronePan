@@ -15,6 +15,7 @@
 
 import UIKit
 import CocoaLumberjackSwift
+import PaperTrailLumberjack
 import GoogleAnalytics
 
 let ddloglevel = DDLogLevel.Debug
@@ -25,9 +26,30 @@ class AppDelegate: UIResponder, UIApplicationDelegate, Analytics {
     var window: UIWindow?
 
     var fileLogger: DDFileLogger?
+    
+    var version : String!
 
     func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject:AnyObject]?) -> Bool {
         UIApplication.sharedApplication().idleTimerDisabled = true
+
+        version = ControllerUtils.buildVersion() ?? "Unknown version"
+        
+        let defaults = NSUserDefaults.standardUserDefaults()
+        let appDefaults = [
+            "analyticsOK": false,
+            "remoteLog": false
+        ]
+        defaults.registerDefaults(appDefaults)
+        defaults.synchronize()
+        
+        let hasOpted = defaults.boolForKey("hasOptedAnayltics")
+        
+        if !hasOpted {
+            showAnalyticsOpt()
+        } else {
+            addRemoteLogger()
+            startAnalytics()
+        }
 
         let logFormatter = LogFormatter()
 
@@ -47,29 +69,31 @@ class AppDelegate: UIResponder, UIApplicationDelegate, Analytics {
 
         DDLogInfo("DronePan launched")
 
-        if let version = ControllerUtils.buildVersion() {
-            DDLogInfo("Running version \(version)")
-        }
-
-        //DDLogDebug("Logging to \(fileLogger.currentLogFileInfo().filePath)  \(fileLogger.currentLogFileInfo().fileName)")
-
-        let defaults = NSUserDefaults.standardUserDefaults()
-        let appDefaults = [
-                "infoOverride": false,
-                "analyticsOK": false
-        ]
-        defaults.registerDefaults(appDefaults)
-        defaults.synchronize()
-
-        let hasOpted = defaults.boolForKey("hasOptedAnayltics")
-
-        if !hasOpted {
-            showAnalyticsOpt()
-        } else {
-            startAnalytics()
-        }
+        DDLogInfo("Running version \(version)")
 
         return true
+    }
+    
+    func addRemoteLogger() {
+        var remoteLog = NSUserDefaults.standardUserDefaults().boolForKey("remoteLog")
+
+        #if DEBUG
+            remoteLog = true
+        #endif
+
+        if remoteLog {
+            let paperTrailLogger = RMPaperTrailLogger.sharedInstance() as RMPaperTrailLogger!
+            
+            paperTrailLogger.programName = "DronePan-iOS-\(version)"
+            if let vendorId = UIDevice.currentDevice().identifierForVendor {
+                paperTrailLogger.machineName = vendorId.UUIDString
+            }
+            
+            paperTrailLogger.host = "logs2.papertrailapp.com"
+            paperTrailLogger.port = 20931
+            
+            DDLog.addLogger(paperTrailLogger, withLevel: .Debug)
+        }
     }
 
     func showAnalyticsOpt() {
@@ -84,6 +108,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, Analytics {
 
             self.responseAlert("Thank you", message: "Thank you for helping us make DronePan better")
 
+            self.addRemoteLogger()
             self.startAnalytics()
         }
 

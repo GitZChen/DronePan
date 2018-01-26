@@ -23,6 +23,28 @@ enum ControllerStatus {
     case Stopping
 }
 
+enum BatteryIcon : String {
+    case Unknown = "BatteryIcon - ??"
+    case Empty = "BatteryIcon - 00"
+    case Low = "BatteryIcon - 25"
+    case Half = "BatteryIcon - 50"
+    case High = "BatteryIcon - 75"
+    case Full = "BatteryIcon - 100"
+    
+    func image() -> UIImage? {
+        return UIImage(named: self.rawValue)
+    }
+}
+
+enum ConnectionStatusIcon : String {
+    case Disconnected = "Disconnected"
+    case Connected = "Connected"
+    
+    func image() -> UIImage? {
+        return UIImage(named: self.rawValue)
+    }
+}
+
 class ControllerUtils {
     class func delay(delay: Double, queue: dispatch_queue_t, closure: () -> ()) {
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, Int64(delay * Double(NSEC_PER_SEC))),
@@ -41,30 +63,9 @@ class ControllerUtils {
         return nil
     }
 
-    class func isInspire(model: String) -> Bool {
-        return model == DJIAircraftModelNameInspire1 ||
-                model == DJIAircraftModelNameInspire1Pro ||
-                model == DJIAircraftModelNameInspire1RAW
-    }
-
-    class func isPhantom3(model: String) -> Bool {
-        return model == DJIAircraftModelNamePhantom34K ||
-                model == DJIAircraftModelNamePhantom3Advanced ||
-                model == DJIAircraftModelNamePhantom3Standard ||
-                model == DJIAircraftModelNamePhantom3Professional
-    }
-
-    class func isPhantom4(model: String) -> Bool {
-        return model == DJIAircraftModelNamePhantom4
-    }
-
-    class func isPhantom(model: String) -> Bool {
-        return ControllerUtils.isPhantom3(model) || ControllerUtils.isPhantom4(model)
-    }
-
     class func gimbalYawIsRelativeToAircraft(model: String?) -> Bool {
         if let model = model {
-            return ControllerUtils.isPhantom4(model) || ControllerUtils.isInspire(model)
+            return ModelConfig.relativeGimbalYaw(model)
         } else {
             return false
         }
@@ -86,4 +87,26 @@ class ControllerUtils {
         }
     }
 
+    class func batteryImageForLevel(level : Int? = nil) -> UIImage? {
+        var icon : BatteryIcon = .Unknown
+        
+        if let level = level {
+            switch(level) {
+            case (90...100):
+                icon = .Full
+            case (70..<90):
+                icon = .High
+            case (45..<70):
+                icon = .Half
+            case (20..<45):
+                icon = .Low
+            case (0..<20):
+                icon = .Empty
+            default:
+                icon = .Unknown
+            }
+        }
+        
+        return icon.image()
+    }
 }
